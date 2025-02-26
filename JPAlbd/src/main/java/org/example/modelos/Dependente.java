@@ -4,12 +4,17 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDate;
 
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
 @Data
 @Entity
+@AllArgsConstructor
+@NoArgsConstructor
 public class Dependente {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
     private String nome;
     private LocalDate dataNascimento;
 

@@ -14,7 +14,7 @@ public class DAOGenerico<T> {
         this.clazz = clazz;
     }
 
-    public T buscaPorId(Integer id) {
+    public T buscaPorId(Object id) {
         return manager.find(clazz, id);
     }
 
@@ -23,28 +23,44 @@ public class DAOGenerico<T> {
     }
 
     public T salvaOuAtualiza(T t) {
-        if (!manager.contains(t) && Objects.isNull(manager.getEntityManagerFactory().getPersistenceUnitUtil().getIdentifier(t))) {
+        begin(); // Iniciar transação
+        Object id = manager.getEntityManagerFactory().getPersistenceUnitUtil().getIdentifier(t);
+        if (id == null) { // Se o ID é nulo, significa que é um novo objeto
             manager.persist(t);
-            return t;
         } else {
-            return manager.merge(t);
+            t = manager.merge(t); // Atualiza se já existir
         }
+        commit(); // Finalizar transação
+        return t;
     }
 
     public void remove(T t) {
-        manager.remove(manager.contains(t) ? t : manager.merge(t));
-    }
-
-    public void commit() {
-        manager.getTransaction().commit();
+        begin();
+        T entity = manager.contains(t) ? t : manager.merge(t);
+        manager.remove(entity);
+        commit();
     }
 
     public void begin() {
-        manager.getTransaction().begin();
+        EntityTransaction tx = manager.getTransaction();
+        if (!tx.isActive()) {
+            tx.begin();
+        }
+    }
+
+    public void commit() {
+        EntityTransaction tx = manager.getTransaction();
+        if (tx.isActive()) {
+            tx.commit();
+        }
     }
 
     public void rollback() {
-        manager.getTransaction().rollback();
+        EntityTransaction tx = manager.getTransaction();
+        if (tx.isActive()) {
+            tx.rollback();
+        }
     }
+
 }
 

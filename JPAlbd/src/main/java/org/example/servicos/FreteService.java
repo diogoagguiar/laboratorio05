@@ -1,39 +1,42 @@
 package org.example.servicos;
 
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.Persistence;
+import lombok.Data;
 import org.example.modelos.*;
 
 import java.math.BigDecimal;
 import java.util.List;
 
+@Data
 public class FreteService {
-    private final EntityManagerFactory emf;
     private final EntityManager em;
+    private Double valorFrete;
 
-    public FreteService() {
-        this.emf = Persistence.createEntityManagerFactory("transportadoraPU");
-        this.em = emf.createEntityManager();
+    public FreteService(EntityManager em) {
+        this.em = em;
     }
 
     public void registrarFrete(Frete frete) {
-        em.getTransaction().begin();
+        try {
+            em.getTransaction().begin();
 
-        // Buscar a distância entre as cidades de origem e destino
-        Distancia distancia = em.createQuery(
-                        "SELECT d FROM Distancia d WHERE d.origem = :origem AND d.destino = :destino",
-                        Distancia.class)
-                .setParameter("origem", frete.getCidadeOrigem())
-                .setParameter("destino", frete.getCidadeDestino())
-                .getSingleResult();
+            // Buscar a distância entre as cidades de origem e destino
+            Distancia distancia = em.createQuery(
+                            "SELECT d FROM Distancia d WHERE d.origem = :origem AND d.destino = :destino",
+                            Distancia.class)
+                    .setParameter("origem", frete.getCidadeOrigem())
+                    .setParameter("destino", frete.getCidadeDestino())
+                    .getSingleResult();
 
-        // Calcular o valor do frete
-        BigDecimal valorFrete = calcularValorFrete(frete.getValorKmRodado(), distancia, frete.getCategoriaFrete());
-        frete.setValorKmRodado(valorFrete);
+            // Calcular o valor do frete
+            valorFrete = calcularValorFrete(frete.getValorKmRodado(), distancia, frete.getCategoriaFrete());
 
-        em.persist(frete);
-        em.getTransaction().commit();
+            em.persist(frete);
+            em.getTransaction().commit();
+        } catch (Exception e) {
+            em.getTransaction().rollback();
+            throw new RuntimeException("Erro ao registrar frete: " + e.getMessage(), e);
+        }
     }
 
     public List<Frete> listarFretesPorCliente(Integer clienteId) {
@@ -42,20 +45,14 @@ public class FreteService {
                 .getResultList();
     }
 
-    public Frete buscarFretePorId(Long id) {
+    public Frete buscarFretePorId(Integer id) {
         return em.find(Frete.class, id);
     }
 
-    private BigDecimal calcularValorFrete(BigDecimal valorKmRodado, Distancia distancia, CategoriaFrete categoriaFrete) {
+    private Double calcularValorFrete(Double valorKmRodado, Distancia distancia, CategoriaFrete categoriaFrete) {
         BigDecimal percentual = BigDecimal.ONE.add(
                 BigDecimal.valueOf(categoriaFrete.getPercentualAdicional()).divide(BigDecimal.valueOf(100))
         );
-        return valorKmRodado.multiply(BigDecimal.valueOf(distancia.getQuilometros())).multiply(percentual);
-    }
-
-    public void fechar() {
-        em.close();
-        emf.close();
+        return valorKmRodado * distancia.getQuilometros() * percentual.doubleValue();
     }
 }
-

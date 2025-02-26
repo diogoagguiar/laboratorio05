@@ -3,17 +3,20 @@ package org.example.modelos;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-import java.util.List;
 import java.math.BigDecimal;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 @Data
 @Entity
+@AllArgsConstructor
+@NoArgsConstructor
 public class Frete {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
     private String numeroNotaFiscal;
-    private BigDecimal valorKmRodado;
+    private Double valorKmRodado;
 
     @NotNull
     private String codigo;
@@ -42,11 +45,15 @@ public class Frete {
     @JoinColumn(name = "categoria_frete_id", nullable = false)
     private CategoriaFrete categoriaFrete;
 
-    public BigDecimal calcularFrete(Distancia distancia) {
-        BigDecimal percentual = BigDecimal.ONE.add(
-                BigDecimal.valueOf(categoriaFrete.getPercentualAdicional()).divide(BigDecimal.valueOf(100))
-        );
-        return valorKmRodado.multiply(BigDecimal.valueOf(distancia.getQuilometros())).multiply(percentual);
+    public double calcularFrete(Distancia distancia) {
+        if (categoriaFrete == null || valorKmRodado == null || distancia == null) {
+            return 0.0; // Ou lance uma exceção, dependendo do comportamento desejado
+        }
+
+        double percentualAdicional = categoriaFrete.getPercentualAdicional();
+        double percentual = 1.0 + (percentualAdicional / 100.0);
+
+        return valorKmRodado.doubleValue() * distancia.getQuilometros() * percentual;
     }
 
 }

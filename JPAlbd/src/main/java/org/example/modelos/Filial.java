@@ -4,13 +4,17 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.util.List;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 @Data
 @Entity
+@AllArgsConstructor
+@NoArgsConstructor
 public class Filial {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
     private String nome;
     private String endereco;
     private String telefone;
