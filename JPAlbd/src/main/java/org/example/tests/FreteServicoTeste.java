@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
 import org.example.modelos.*;
+import org.example.repositorio.*;
 import org.example.servicos.FreteService;
 
 import java.util.List;
@@ -58,21 +59,27 @@ public class FreteServicoTeste {
             frete.setVeiculo(veiculo);
             frete.setCodigo("FRETE_123"); // Adicione esta linha
 
-            // Persistindo todas as entidades dentro de uma transação
-            em.getTransaction().begin();
-            em.persist(cliente);
-            em.persist(cidadeOrigem);
-            em.persist(cidadeDestino);
-            em.persist(distancia);
-            em.persist(categoria);
-            em.persist(veiculo);
-            em.persist(funcionario);
-            em.persist(frete); // Persiste o Frete por último, após todas as entidades relacionadas
-            em.getTransaction().commit();
+            ClienteRepositorio clienteRepositorio = new ClienteRepositorio(em);
+            FuncionarioRepositorio funcionarioRepositorio = new FuncionarioRepositorio(em);
+            CidadeRepositorio cidadeRepositorio = new CidadeRepositorio(em);
+            DistanciaRepositorio distanciaRepositorio = new DistanciaRepositorio(em);
+            CategoriaFreteRepositorio categoriaFreteRepositorio = new CategoriaFreteRepositorio(em);
+            VeiculoRepositorio veiculoRepositorio = new VeiculoRepositorio(em);
+            FreteRepositorio freteRepositorio = new FreteRepositorio(em);
+
+            // Persistindo todas as entidades usando os repositórios
+            clienteRepositorio.salvarOuAtualizar(cliente);
+            funcionarioRepositorio.salvarOuAtualizar(funcionario);
+            cidadeRepositorio.salvarOuAtualizar(cidadeOrigem);
+            cidadeRepositorio.salvarOuAtualizar(cidadeDestino);
+            distanciaRepositorio.salvarOuAtualizar(distancia);
+            categoriaFreteRepositorio.salvaOuAtualiza(categoria);
+            veiculoRepositorio.salvarOuAtualizar(veiculo);
+            freteRepositorio.salvarOuAtualizar(frete);
 
             // Registrar frete
             freteService.registrarFrete(frete);
-            System.out.println("✅ Frete registrado com sucesso!");
+            System.out.println("Frete registrado com sucesso!");
 
             // Buscar frete por ID
             Frete freteEncontrado = freteService.buscarFretePorId(frete.getId());
@@ -81,6 +88,8 @@ public class FreteServicoTeste {
 
             // Listar fretes de um cliente
             List<Frete> fretesCliente = freteService.listarFretesPorCliente(cliente.getId());
+            System.out.println("Frete encontrado: " + freteEncontrado.getCodigo() + ", valor: " + valorFrete);
+            System.out.println("Frete registrado com sucesso!");
             System.out.println(" Total de fretes do cliente: " + fretesCliente.size());
 
         } catch (Exception e) {
