@@ -16,58 +16,68 @@ public class FreteServicoTeste {
         try {
             FreteService freteService = new FreteService(em);
 
-            // Criando objetos para teste
+            // Iniciando transação para persistir dados iniciais
+            em.getTransaction().begin();
+
+            // Criando e persistindo cliente
             Cliente cliente = new Cliente();
             cliente.setNome("Diogo Silva Aguiar");
             cliente.setEmail("joao.silva@gmail.com");
             cliente.setTelefone("555-5555");
             cliente.setAtivo(true);
+            em.persist(cliente);
 
+            // Criando e persistindo cidades
             Cidade cidadeOrigem = new Cidade();
             cidadeOrigem.setNome("São Paulo");
             cidadeOrigem.setEstado("SP");
+            em.persist(cidadeOrigem);
 
             Cidade cidadeDestino = new Cidade();
             cidadeDestino.setNome("Rio de Janeiro");
             cidadeDestino.setEstado("RJ");
+            em.persist(cidadeDestino);
 
+            // Criando e persistindo distância entre as cidades
             Distancia distancia = new Distancia();
             distancia.setOrigem(cidadeOrigem);
             distancia.setDestino(cidadeDestino);
             distancia.setQuilometros(400.0);
+            em.persist(distancia);
 
+            // Criando e persistindo categoria de frete
             CategoriaFrete categoria = new CategoriaFrete();
-            categoria.setDescricao("Entrega Rápida");
-            categoria.setPercentualAdicional(10); // 10%
+            categoria.setNome("Entrega Rápida");
+            categoria.setDescricao("Entrega rápida");
+            categoria.setPercentualAdicional(10.0F); // 10%
+            em.persist(categoria);
 
+            // Criando e persistindo veículo
             Veiculo veiculo = new Veiculo();
             veiculo.setNumeroPlaca("ABC-1234");
+            em.persist(veiculo);
 
+            // Criando e persistindo funcionário
             Funcionario funcionario = new Funcionario();
             funcionario.setNome("Lorena Teixeira");
-            funcionario.setCpf("123.456.789");
+            funcionario.setCpf("123.456.789-00"); // CPF com formato correto
             funcionario.setMatricula(123454);
+            em.persist(funcionario);
 
+            // Criando e persistindo frete
             Frete frete = new Frete();
             frete.setCliente(cliente);
             frete.setFuncionario(funcionario);
-            frete.setCidadeOrigem(cidadeOrigem);
-            frete.setCidadeDestino(cidadeDestino);
+            frete.setCidadeDeOrigem(cidadeOrigem); // Alterado para cidadeDeOrigem
+            frete.setCidadeDeDestino(cidadeDestino); // Alterado para cidadeDeDestino
             frete.setCategoriaFrete(categoria);
             frete.setValorKmRodado(2.0); // R$2,00 por km
             frete.setVeiculo(veiculo);
-            frete.setCodigo("FRETE_123"); // Adicione esta linha
+            frete.setCodigo("FRETE_123"); // Código do frete
+            frete.setNumeroNotaFiscal("NF-1001"); // Adicionando número de nota fiscal
+            em.persist(frete);
 
-            // Persistindo todas as entidades dentro de uma transação
-            em.getTransaction().begin();
-            em.persist(cliente);
-            em.persist(cidadeOrigem);
-            em.persist(cidadeDestino);
-            em.persist(distancia);
-            em.persist(categoria);
-            em.persist(veiculo);
-            em.persist(funcionario);
-            em.persist(frete); // Persiste o Frete por último, após todas as entidades relacionadas
+            // Finalizando transação
             em.getTransaction().commit();
 
             // Registrar frete
@@ -76,15 +86,18 @@ public class FreteServicoTeste {
 
             // Buscar frete por ID
             Frete freteEncontrado = freteService.buscarFretePorId(frete.getId());
-            Double valorFrete = freteService.getValorFrete();
-            System.out.println(" Frete encontrado: " + freteEncontrado + ", valor: " + valorFrete);
+            double valorFrete = freteEncontrado.calcularFrete(distancia);
+            System.out.println("\nDetalhes do Frete Encontrado:");
+            System.out.printf("Código: %s | Nota Fiscal: %s | Valor do Frete: R$ %.2f%n",
+                    freteEncontrado.getCodigo(), freteEncontrado.getNumeroNotaFiscal(), valorFrete);
 
             // Listar fretes de um cliente
             List<Frete> fretesCliente = freteService.listarFretesPorCliente(cliente.getId());
-            System.out.println(" Total de fretes do cliente: " + fretesCliente.size());
+            System.out.println("\nTotal de fretes do cliente: " + fretesCliente.size());
 
         } catch (Exception e) {
-            System.err.println(" Erro no teste: " + e.getMessage());
+            System.err.println("❌ Erro no teste: " + e.getMessage());
+            e.printStackTrace();
         } finally {
             em.close();
             emf.close();

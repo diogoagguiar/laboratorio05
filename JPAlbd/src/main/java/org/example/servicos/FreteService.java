@@ -24,15 +24,23 @@ public class FreteService {
             Distancia distancia = em.createQuery(
                             "SELECT d FROM Distancia d WHERE d.origem = :origem AND d.destino = :destino",
                             Distancia.class)
-                    .setParameter("origem", frete.getCidadeOrigem())
-                    .setParameter("destino", frete.getCidadeDestino())
+                    .setParameter("origem", frete.getCidadeDeOrigem())  // Alterado para cidadeDeOrigem
+                    .setParameter("destino", frete.getCidadeDeDestino()) // Alterado para cidadeDeDestino
                     .getSingleResult();
+
+            // Verifica se a distância foi encontrada
+            if (distancia == null) {
+                throw new RuntimeException("Nenhuma distância encontrada entre as cidades informadas.");
+            }
 
             // Calcular o valor do frete
             valorFrete = calcularValorFrete(frete.getValorKmRodado(), distancia, frete.getCategoriaFrete());
 
+            // Persistir o frete atualizado com o valor calculado
+            frete.setValorKmRodado(valorFrete); // Salvar o valor calculado no frete
             em.persist(frete);
             em.getTransaction().commit();
+
         } catch (Exception e) {
             em.getTransaction().rollback();
             throw new RuntimeException("Erro ao registrar frete: " + e.getMessage(), e);
@@ -50,9 +58,18 @@ public class FreteService {
     }
 
     private Double calcularValorFrete(Double valorKmRodado, Distancia distancia, CategoriaFrete categoriaFrete) {
+        if (categoriaFrete == null || valorKmRodado == null || distancia == null) {
+            throw new IllegalArgumentException("Dados insuficientes para calcular o frete.");
+        }
+
         BigDecimal percentual = BigDecimal.ONE.add(
                 BigDecimal.valueOf(categoriaFrete.getPercentualAdicional()).divide(BigDecimal.valueOf(100))
         );
+
         return valorKmRodado * distancia.getQuilometros() * percentual.doubleValue();
+    }
+
+    public Double getValorFrete() {
+        return valorFrete;
     }
 }

@@ -6,11 +6,16 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 @Data
-@Entity
-@AllArgsConstructor
 @NoArgsConstructor
-public class Cliente extends PessoaFisica {
-    private String contato;
-    private String endereco;
+@AllArgsConstructor
+@Entity
+public class Cliente {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    private String nome;
+    private String email;
+    private String telefone;
     private boolean ativo;
 }
